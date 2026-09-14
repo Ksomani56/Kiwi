@@ -1,0 +1,19 @@
+# Antigravity Rules
+
+1. **Keep it simple.**
+   Do not over-engineer, add unnecessary features, dependencies, abstractions, or architecture. Build only what is explicitly requested.
+
+2. **Preserve the existing UI.**
+   Use the current prototype as the visual reference. Modify it rather than redesigning the application from scratch.
+
+3. **No unapproved changes.**
+   Before making significant code changes, explain what you plan to change and wait for my approval.
+
+4. **No scope creep.**
+   If you think a feature would be useful but it wasn't requested, ask me first. Do not implement it automatically.
+
+5. **Prefer the simplest technology.**
+   Use HTML, Tailwind, Vanilla JS, Supabase and Chart.js. Don't introduce frameworks or libraries unless there's a clear reason.
+
+6. **Be honest about testing.**
+   Never say something works unless you actually tested it. Report errors or limitations clearly.

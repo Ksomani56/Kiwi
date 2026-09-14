@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trisparc Reel Scripts Studio</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        corp: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb', // Primary Corporate Blue
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            950: '#172554',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        h1, h2, h3, .font-display { font-family: 'Outfit', sans-serif; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        
+        /* Custom Scrollbar for a cleaner look */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 260px;
+            max-height: 300px;
+        }
+
+        /* Prompter specific styles */
+        #prompter-scroll-container {
+            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+        }
+        .active-teleprompter-beat {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px -5px rgba(29, 78, 216, 0.15), 0 8px 10px -6px rgba(29, 78, 216, 0.1);
+            border-left-width: 4px;
+            border-left-color: #2563eb;
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- DESKTOP TOPBAR (Hidden on small screens) -->
+    <header class="hidden md:block bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo area -->
+                <div class="flex-shrink-0 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-corp-600 to-corp-800 flex items-center justify-center shadow-md">
+                        <span class="text-white font-bold text-xl font-display">T</span>
+                    </div>
+                    <div>
+                        <h1 class="font-display font-bold text-lg text-slate-900 leading-tight">Trisparc Studio</h1>
+                        <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Reel Scripts Manager</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="flex items-center space-x-1" id="desktop-nav">
+                    <!-- Dynamic script tabs will go here -->
+                </nav>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="openImportModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                        <span>➕ Add Script</span>
+                    </button>
+                    <button onclick="setView('prompter')" id="top-nav-prompter" class="px-4 py-2 bg-corp-600 hover:bg-corp-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm">
+                        <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span> Teleprompter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MOBILE HEADER -->
+    <header class="md:hidden bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm flex items-center justify-between px-4 h-16">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-corp-600 to-corp-800 flex items-center justify-center shadow-sm">
+                <span class="text-white font-bold text-lg font-display">T</span>
+            </div>
+            <h1 class="font-display font-bold text-base text-slate-900">Trisparc Studio</h1>
+        </div>
+        <button onclick="toggleMobileSidebar()" class="text-slate-500 hover:text-slate-700 focus:outline-none p-2">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </header>
+
+    <!-- MOBILE SIDEBAR (Slide-over) -->
+    <div id="mobile-sidebar" class="fixed inset-0 z-40 hidden">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="toggleMobileSidebar()"></div>
+        
+        <!-- Sidebar Panel -->
+        <div class="fixed inset-y-0 right-0 w-64 bg-white shadow-xl transform transition-transform duration-300 translate-x-full flex flex-col" id="mobile-sidebar-panel">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h2 class="font-display font-bold text-slate-800">Menu</h2>
+                <button onclick="toggleMobileSidebar()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+                <div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-2">Actions</div>
+                <button onclick="mobileNavigateToImport()" class="w-full text-left px-4 py-3 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-colors flex items-center gap-3">
+                    ➕ Import Script
+                </button>
+                <button onclick="mobileNavigate('prompter')" class="w-full text-left px-4 py-3 rounded-xl bg-corp-50 text-corp-700 font-medium hover:bg-corp-100 transition-colors flex items-center gap-3 mt-1">
+                    🎙️ Teleprompter
+                </button>
+                <button onclick="mobileNavigate('shotlist')" class="w-full text-left px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-3 mt-1">
+                    🎬 Shot List
+                </button>
+
+                <div class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mt-6 mb-2">Library</div>
+                <div id="mobile-nav-scripts" class="space-y-1">
+                    <!-- Mobile script links populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- VIEW: SCRIPT HUB (Dynamic Single Script View) -->
+        <div id="view-hub" class="view-panel space-y-6">
+            <!-- Hub Header dynamically updated -->
+            <div id="hub-header"></div>
+            
+            <!-- Filter Bar -->
+            <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex-grow max-w-md relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="script-search" placeholder="Search spoken text, shot notes, overlays..." 
+                           class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-corp-500 focus:border-corp-500 bg-slate-50"
+                           onkeyup="filterScriptContent()">
+                </div>
+                
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2 whitespace-nowrap">Highlight:</span>
+                    <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-800 text-white transition-colors whitespace-nowrap shadow-sm">All</button>
+                    <button onclick="setFilter('spoken')" id="filter-spoken" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap">Spoken</button>
+                    <button onclick="setFilter('onscreen')" id="filter-onscreen" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap">Text</button>
+                    <button onclick="setFilter('shot')" id="filter-shot" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap">Shots</button>
+                </div>
+            </div>
+
+            <!-- Main Split Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Script Content -->
+                <div class="lg:col-span-2 space-y-4" id="script-content-container">
+                    <!-- Content populated by JS -->
+                </div>
+                
+                <!-- Right Column: Analytics & Meta -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Quick Stats -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <h3 class="font-display font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <span>📊</span> Script Analytics
+                        </h3>
+                        <div class="space-y-3" id="script-stats-container">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Visualizer -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <h3 class="font-display font-bold text-slate-800 mb-2">Time Distribution</h3>
+                        <p class="text-xs text-slate-500 mb-4">Duration per narrative beat (seconds)</p>
+                        <div class="chart-container">
+                            <canvas id="hub-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: SHOT LIST & CUE CHECKLIST -->
+        <div id="view-shotlist" class="view-panel hidden space-y-6">
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-display font-bold text-slate-900">🎬 Master Shot List</h2>
+                    <p class="text-sm text-slate-500 mt-1">Interactive checklist of all visual cues across your scripts for directors and editors.</p>
+                </div>
+                <button onclick="exportAllScripts()" class="px-5 py-2.5 bg-corp-600 hover:bg-corp-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 whitespace-nowrap">
+                    📥 Export Full Library (.MD)
+                </button>
+            </div>
+            <div id="shotlist-container" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- VIEW: TELEPROMPTER STUDIO -->
+        <div id="view-prompter" class="view-panel hidden h-[calc(100vh-120px)] flex flex-col bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+            <!-- Prompter Toolbar -->
+            <div class="bg-slate-950 p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <select id="prompter-script-select" onchange="loadPrompterScript()" class="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-2 focus:ring-corp-500 focus:border-corp-500">
+                        <!-- Populated by JS -->
+                    </select>
+                    
+                    <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
+                        <button onclick="changeSpeed(-1)" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white rounded hover:bg-slate-700">-</button>
+                        <div class="px-3 text-sm font-bold text-white min-w-[4rem] text-center" id="speed-display">2.0x</div>
+                        <button onclick="changeSpeed(1)" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white rounded hover:bg-slate-700">+</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button id="practice-record-btn" onclick="toggleRecording()" class="px-4 py-2 bg-slate-800 hover:bg-red-600 border border-slate-700 text-slate-300 hover:text-white rounded-lg font-bold text-sm transition-colors flex items-center gap-2">
+                        🎙️ Record Take
+                    </button>
+                    <audio id="audio-playback" controls class="hidden h-9 w-full md:w-auto outline-none rounded-lg bg-slate-800"></audio>
+                    
+                    <button id="prompter-play-btn" onclick="togglePrompter()" class="px-6 py-2 bg-corp-600 hover:bg-corp-500 text-white font-bold rounded-lg shadow-lg flex items-center gap-2 transition-colors">
+                        ▶ Start
+                    </button>
+                </div>
+            </div>
+
+            <!-- Timer / Status Bar -->
+            <div class="bg-slate-900 px-6 py-2 flex justify-between items-center border-b border-slate-800/50">
+                <div id="prompter-timer" class="font-mono text-2xl font-bold text-corp-400 tracking-wider">00:00</div>
+                <div id="record-status" class="hidden text-red-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span> Recording
+                </div>
+            </div>
+
+            <!-- Prompter Screen -->
+            <div class="flex-grow relative overflow-hidden bg-slate-900" id="prompter-scroll-container">
+                <!-- Eye-line marker -->
+                <div class="absolute top-[30%] left-0 w-full h-[2px] bg-red-500/30 z-10 pointer-events-none"></div>
+                <div class="absolute top-[30%] left-4 text-red-500/50 text-xs font-bold uppercase z-10 pointer-events-none -translate-y-1/2">Eye Line</div>
+                
+                <!-- Scroll Content -->
+                <div id="prompter-content" class="absolute w-full px-8 md:px-24 transition-transform duration-100 ease-linear pb-[60vh] pt-[30vh]">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- IMPORT MODAL -->
+    <div id="import-modal" class="fixed inset-0 z-[60] hidden">
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="closeImportModal()"></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+                
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <div>
+                        <h2 class="text-xl font-display font-bold text-slate-900">Add New Script</h2>
+                        <p class="text-sm text-slate-500 mt-1">Paste plain text or markdown. Our parser will format it automatically.</p>
+                    </div>
+                    <button onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 bg-white rounded-full p-2 border border-slate-200 shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="p-6 overflow-y-auto flex-grow space-y-5">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Script Title</label>
+                            <input type="text" id="import-title" placeholder="e.g., The Payment Risk Pivot" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-corp-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Short Name</label>
+                            <input type="text" id="import-short" placeholder="e.g., Script 3" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-corp-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-end mb-1">
+                            <label class="block text-sm font-bold text-slate-700">Script Content (Raw Text)</label>
+                            <label class="cursor-pointer text-xs font-bold text-corp-600 hover:text-corp-800 bg-corp-50 px-2 py-1 rounded border border-corp-100 transition-colors">
+                                📄 Upload .txt / .md
+                                <input type="file" id="import-file-upload" accept=".txt,.md" class="hidden" onchange="handleFileUpload(event)">
+                            </label>
+                        </div>
+                        <textarea id="import-text" rows="12" class="w-full p-4 bg-slate-50 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-corp-500 outline-none custom-scrollbar resize-none placeholder-slate-400" placeholder="Paste your script here... Ensure you use timing tags like [0-3s] and prefix lines with 'Spoken:' or 'On-screen text:'"></textarea>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                    <button onclick="closeImportModal()" class="px-5 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-semibold transition-colors shadow-sm">Cancel</button>
+                    <button onclick="processImport()" class="px-5 py-2 bg-corp-600 hover:bg-corp-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm">Parse & Save Script</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- APPLICATION STATE ---
+        let currentView = 'hub';
+        let activeScriptId = 'script1';
+        let currentFilter = 'all';
+        let nextScriptIdNum = 4;
+        let hubChartInstance = null;
+
+        // --- THEME PALETTES ---
+        const themeColors = {
+            emerald: { bg: 'bg-emerald-900', border: 'border-emerald-800', text: 'text-emerald-400', badge: 'bg-emerald-900/30' },
+            orange:  { bg: 'bg-orange-900',  border: 'border-orange-800',  text: 'text-orange-400',  badge: 'bg-orange-900/30' },
+            indigo:  { bg: 'bg-indigo-900',  border: 'border-indigo-800',  text: 'text-indigo-400',  badge: 'bg-indigo-900/30' },
+            blue:    { bg: 'bg-blue-900',    border: 'border-blue-800',    text: 'text-blue-400',    badge: 'bg-blue-900/30' },
+            slate:   { bg: 'bg-slate-900',   border: 'border-slate-800',   text: 'text-slate-400',   badge: 'bg-slate-900/30' }
+        };
+        const themeList = ['emerald', 'orange', 'indigo', 'blue', 'slate'];
+
+        // --- SCRIPT DATA REPOSITORY ---
+        const scriptData = {
+            'script1': {
+                id: 'script1',
+                shortTitle: 'Script 1',
+                title: 'Script 1: The First Client Crisis',
+                theme: 'emerald',
+                desc: 'A high-stakes narrative describing how Trisparc turned a competitive crisis into a major product strategy pivot for their first client.',
+                beats: [
+                    { time: '[0-3s]', title: 'HOOK', startSec: 0, endSec: 3, spoken: "Our first client paid us ₹3 lakh to build this app. Two weeks in, a competitor launched almost the exact same thing.", onScreen: "₹3 LAKH. FIRST CLIENT. THEN THIS HAPPENED —", shot: null, deliveryNote: null, wpm: 120 },
+                    { time: '[3-10s]', title: 'CONTEXT', startSec: 3, endSec: 10, spoken: "They wanted a marketplace app — verified service providers, booking, payments, job tracking. Our first real client, first real money on the line.", onScreen: null, shot: null, deliveryNote: null, wpm: 154 },
+                    { time: '[10-20s]', title: 'THE TURN', startSec: 10, endSec: 20, spoken: "Two weeks into development, we got a call from the client. He said — 'Have you seen this? Someone just launched almost exactly what we're building.'", onScreen: "Client's line appears timed to expression", shot: "Kshitij on a call — phone/laptop visible, reaction shifting from confident to concerned as he listens.", deliveryNote: null, wpm: 150 },
+                    { time: '[20-32s]', title: 'THE DILEMMA', startSec: 20, endSec: 32, spoken: "We had two options — finish the plan we'd already promised, or go back to zero and tell him why.", onScreen: null, shot: "Kshitij thinking it through, maybe at a whiteboard or looking at the wireframes", deliveryNote: null, wpm: 95 },
+                    { time: '[32-44s]', title: 'THE DECISION (proof beat)', startSec: 32, endSec: 44, spoken: "We didn't scrap the plan. We looked at what the competitor was missing — they had no way for clients to verify a provider's past work before booking. So we built a verification layer into the core flow instead of just copying the same marketplace.", onScreen: null, shot: "Screen recording — a quick scroll through the actual verification feature/screen in the app, or a wireframe of it", deliveryNote: null, wpm: 225 },
+                    { time: '[44-52s]', title: 'TAKEAWAY', startSec: 44, endSec: 52, spoken: "That was the moment we stopped just building software — and started building for a business.", onScreen: null, shot: null, deliveryNote: "Direct to camera", wpm: 120 },
+                    { time: '[52-55s]', title: 'CTA', startSec: 52, endSec: 55, spoken: null, onScreen: "This is what building for a client actually looks like.", shot: null, deliveryNote: null, wpm: 0 }
+                ]
+            },
+            'script2': {
+                id: 'script2',
+                shortTitle: 'Script 2',
+                title: 'Script 2: Competing on Speed',
+                theme: 'orange',
+                desc: 'Focusing on the strategic decision to prioritize speed and instant matching over building a bloated, feature-heavy marketplace app.',
+                beats: [
+                    { time: '[0-3s]', title: 'HOOK', startSec: 0, endSec: 3, spoken: "We could've copied them feature for feature. We didn't.", onScreen: "OUR COMPETITOR LAUNCHED THE SAME APP. WE DID THIS INSTEAD.", shot: null, deliveryNote: null, wpm: 160 },
+                    { time: '[3-8s]', title: 'THE QUESTION', startSec: 3, endSec: 8, spoken: "We asked the client one thing — 'Why would someone choose us over them?'", onScreen: null, shot: null, deliveryNote: null, wpm: 156 },
+                    { time: '[8-24s]', title: 'THE FLIP (show, don\'t narrate)', startSec: 8, endSec: 24, spoken: "Before: businesses searched through providers. Now: they post the problem — 'AC's not working' — and we match them instantly.", onScreen: null, shot: "fast screen recording — type the problem, cut straight to matched provider, no lingering", deliveryNote: null, wpm: 75 },
+                    { time: '[24-32s]', title: 'THE COST', startSec: 24, endSec: 32, spoken: "We scrapped half the app to build this.", onScreen: null, shot: "quick before/after — old screen flow crossed out, new one takes its place. 2 seconds, no explanation needed", deliveryNote: null, wpm: 60 },
+                    { time: '[32-38s]', title: 'TAKEAWAY', startSec: 32, endSec: 38, spoken: "We stopped competing on features. We started competing on speed.", onScreen: null, shot: null, deliveryNote: "Direct to camera, flat delivery, no build-up", wpm: 100 },
+                    { time: '[38-42s]', title: 'CTA', startSec: 38, endSec: 42, spoken: null, onScreen: "Next: we show this to a real business.", shot: null, deliveryNote: null, wpm: 0 }
+                ]
+            },
+            'script3': {
+                id: 'script3',
+                shortTitle: 'Script 3',
+                title: 'Script 3: The Payment Risk Pivot',
+                theme: 'indigo',
+                desc: 'A follow-up narrative exploring the unintended consequences of the speed pivot, and how it uncovered the real problem: money risk.',
+                beats: [
+                    { time: '[0-3s]', title: 'HOOK', startSec: 0, endSec: 3, spoken: "The pivot worked instantly. Then it created a new risk.", onScreen: "SHE POSTED THE PROBLEM. GOT MATCHED IN A MINUTE. THEN SHE ALMOST LOST HER MONEY.", shot: null, deliveryNote: null, wpm: 180 },
+                    { time: '[3-12s]', title: 'SETUP (fast recap)', startSec: 3, endSec: 12, spoken: "Post the problem, get matched, no searching. That's what we built. This business owner tried it live.", onScreen: null, shot: "screen recording — typing the problem, instant match appears", deliveryNote: null, wpm: 106 },
+                    { time: '[12-22s]', title: 'THE WIN', startSec: 12, endSec: 22, spoken: "Matched in under a minute. Fastest she'd ever booked a service.", onScreen: null, shot: "her reaction, quick and genuine", deliveryNote: null, wpm: 66 },
+                    { time: '[22-38s]', title: 'THE TWIST', startSec: 22, endSec: 38, spoken: "She paid upfront to lock the booking. Then the provider didn't show. No way to get her money back, no way to know if this would happen again.", onScreen: null, shot: "her checking her phone repeatedly, or a notification showing \"provider hasn't arrived\" — subtle, not dramatic", deliveryNote: null, wpm: 101 },
+                    { time: '[38-45s]', title: 'THE REALIZATION', startSec: 38, endSec: 45, spoken: "Speed was never the hard problem. Money was.", onScreen: null, shot: null, deliveryNote: "Direct to camera, flat delivery", wpm: 68 },
+                    { time: '[45-50s]', title: 'CTA', startSec: 45, endSec: 50, spoken: "One feature fixed this completely. Next reel.", onScreen: "One feature fixed this completely. Next reel.", shot: null, deliveryNote: null, wpm: 84 }
+                ]
+            }
+        };
+
+        function buildNavigation() {
+            const deskNav = document.getElementById('desktop-nav');
+            const mobNav = document.getElementById('mobile-nav-scripts');
+            
+            if (!deskNav || !mobNav) return;
+            
+            let deskHtml = '';
+            let mobHtml = '';
+
+            Object.values(scriptData).forEach(s => {
+                // Desktop Tab
+                const isActive = (currentView === 'hub' && activeScriptId === s.id);
+                const activeClass = isActive ? `bg-slate-100 text-corp-700 font-bold border-b-2 border-corp-600` : `text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-b-2 border-transparent`;
+                deskHtml += `
+                    <button onclick="loadScriptHub('${s.id}')" class="px-4 py-3 text-sm font-medium transition-all ${activeClass}">
+                        ${s.shortTitle}
+                    </button>
+                `;
+
+                // Mobile Link
+                const mActiveClass = isActive ? `bg-corp-50 text-corp-700 font-bold border-l-4 border-corp-600` : `text-slate-600 hover:bg-slate-50 border-l-4 border-transparent`;
+                mobHtml += `
+                    <button onclick="mobileNavigateToHub('${s.id}')" class="w-full text-left px-4 py-2 text-sm transition-all ${mActiveClass}">
+                        ${s.title}
+                    </button>
+                `;
+            });
+
+            deskNav.innerHTML = deskHtml;
+            mobNav.innerHTML = mobHtml;
+            
+            // Populate Prompter Select
+            const prompterSelect = document.getElementById('prompter-script-select');
+            if (prompterSelect) {
+                prompterSelect.innerHTML = Object.values(scriptData).map(s => 
+                    `<option value="${s.id}" ${s.id === activeScriptId ? 'selected' : ''}>${s.shortTitle} - ${s.title}</option>`
+                ).join('');
+            }
+        }
+
+        function setView(viewName) {
+            currentView = viewName;
+            
+            // Hide all panels
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.add('hidden'));
+            
+            // Show target panel
+            const target = document.getElementById(`view-${viewName}`);
+            if (target) target.classList.remove('hidden');
+
+            // Reset navigation highlights if leaving hub
+            if (viewName !== 'hub') {
+                 buildNavigation(); // Re-render to clear active state on hub tabs
+            }
+
+            if (viewName === 'shotlist') {
+                renderShotList();
+            } else if (viewName === 'prompter') {
+                setupPrompterView();
+            }
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function loadScriptHub(scriptId) {
+            activeScriptId = scriptId;
+            setView('hub');
+            buildNavigation();
+            renderHubContent();
+        }
+
+        // Mobile helpers
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('mobile-sidebar');
+            const panel = document.getElementById('mobile-sidebar-panel');
+            if (sidebar.classList.contains('hidden')) {
+                sidebar.classList.remove('hidden');
+                setTimeout(() => panel.classList.remove('translate-x-full'), 10);
+            } else {
+                panel.classList.add('translate-x-full');
+                setTimeout(() => sidebar.classList.add('hidden'), 300);
+            }
+        }
+
+        function mobileNavigate(viewName) {
+            toggleMobileSidebar();
+            setView(viewName);
+        }
+
+        function mobileNavigateToHub(scriptId) {
+            toggleMobileSidebar();
+            loadScriptHub(scriptId);
+        }
+        
+        function mobileNavigateToImport() {
+            toggleMobileSidebar();
+            openImportModal();
+        }
+
+        function renderHubContent() {
+            const script = scriptData[activeScriptId];
+            if (!script) return;
+
+            const tColors = themeColors[script.theme] || themeColors.slate;
+
+            // 1. Render Header
+            let totalTime = script.beats.length > 0 ? script.beats[script.beats.length-1].endSec : 0;
+            const headerHtml = `
+                <div class="rounded-2xl p-6 md:p-8 ${tColors.bg} border ${tColors.border} shadow-lg text-white">
+                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                        <span class="px-2.5 py-1 text-xs font-bold uppercase tracking-wider rounded ${tColors.badge} border ${tColors.border} ${tColors.text}">${script.shortTitle}</span>
+                        <span class="text-sm font-medium text-slate-300">Duration: ${totalTime}s</span>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-display font-bold mb-3">${script.title}</h2>
+                    <p class="text-slate-300 text-sm md:text-base max-w-3xl leading-relaxed opacity-90">${script.desc}</p>
+                </div>
+            `;
+            document.getElementById('hub-header').innerHTML = headerHtml;
+
+            // 2. Render Beats List
+            const container = document.getElementById('script-content-container');
+            let contentHtml = '';
+
+            script.beats.forEach((beat, idx) => {
+                // Formatting for display based on filters
+                let wpmBadge = beat.wpm > 0 ? 
+                    (beat.wpm < 130 ? `<span class="text-[10px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded ml-2">⏱️ ${beat.wpm} WPM (Slow)</span>` : 
+                     beat.wpm <= 160 ? `<span class="text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded ml-2">⏱️ ${beat.wpm} WPM (Ideal)</span>` : 
+                     `<span class="text-[10px] bg-red-100 text-red-800 px-1.5 py-0.5 rounded ml-2">⏱️ ${beat.wpm} WPM (Fast)</span>`) 
+                    : "";
+
+                contentHtml += `
+                    <div class="beat-card p-5 bg-white rounded-xl border border-slate-200 shadow-sm transition-all duration-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 bg-slate-100 text-slate-600 font-bold text-xs rounded border border-slate-200">${beat.time}</span>
+                                <h4 class="ml-3 font-bold text-slate-800 text-sm uppercase tracking-wider">${beat.title.replace(/\[⏱️.*?\]/, '')}</h4>
+                                ${wpmBadge}
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            ${beat.deliveryNote ? `
+                                <div class="filter-target type-spoken flex items-start gap-2 text-xs bg-slate-50 border border-slate-100 p-2 rounded text-slate-600 italic">
+                                    <span class="mt-0.5">🗣️</span> <span>Note: ${beat.deliveryNote}</span>
+                                </div>
+                            ` : ''}
+                            ${beat.onScreen ? `
+                                <div class="filter-target type-onscreen px-4 py-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-md">
+                                    <span class="text-[10px] font-bold text-yellow-600 uppercase tracking-wider block mb-1">On-Screen Text</span>
+                                    <p class="text-sm font-semibold text-yellow-900">${beat.onScreen}</p>
+                                </div>
+                            ` : ''}
+                            ${beat.spoken ? `
+                                <div class="filter-target type-spoken px-4 py-3 bg-slate-50 border border-slate-200 rounded-md">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Spoken Dialog</span>
+                                    <p class="text-base font-mono text-slate-800 leading-relaxed font-medium">"${beat.spoken}"</p>
+                                </div>
+                            ` : ''}
+                            ${beat.shot ? `
+                                <div class="filter-target type-shot px-4 py-3 bg-slate-800 border-l-4 border-blue-500 rounded-r-md">
+                                    <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider block mb-1">Visual / Shot Note</span>
+                                    <p class="text-sm font-medium text-slate-200">🎥 [SHOT: ${beat.shot}]</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = contentHtml;
+
+            // 3. Render Stats & Chart
+            renderAnalytics(script);
+            applyFilter(); // re-apply any active filters
+        }
+
+        function renderAnalytics(script) {
+            const statsContainer = document.getElementById('script-stats-container');
+            const labels = [];
+            const data = [];
+            const bgColors = [];
+
+            let statsHtml = '';
+            
+            script.beats.forEach((beat, i) => {
+                const duration = beat.endSec - beat.startSec;
+                labels.push(beat.title.split(' ')[0]); // Short label
+                data.push(duration);
+                
+                // Color gradient based on index
+                const alpha = Math.max(0.2, 1 - (i * 0.15));
+                bgColors.push(`rgba(37, 99, 235, ${alpha})`); // Corporate blue gradient
+
+                statsHtml += `
+                    <div class="flex justify-between items-center text-sm border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                        <span class="text-slate-600 font-medium">${beat.title.replace(/\[⏱️.*?\]/, '')} <span class="text-xs text-slate-400 ml-1">${beat.time}</span></span>
+                        <span class="font-bold text-slate-900">${duration}s</span>
+                    </div>
+                `;
+            });
+
+            statsContainer.innerHTML = statsHtml;
+
+            // Chart.js render
+            const ctx = document.getElementById('hub-chart');
+            if (hubChartInstance) {
+                hubChartInstance.destroy();
+            }
+
+            hubChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Duration (seconds)',
+                        data: data,
+                        backgroundColor: bgColors,
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: '#f1f5f9' },
+                            title: { display: true, text: 'Seconds', font: { size: 10 } }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function setFilter(type) {
+            currentFilter = type;
+            
+            // Update button styles
+            const btns = ['all', 'spoken', 'onscreen', 'shot'];
+            btns.forEach(b => {
+                const el = document.getElementById(`filter-${b}`);
+                if (!el) return;
+                if (b === type) {
+                    el.className = "px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-800 text-white transition-colors shadow-sm";
+                } else {
+                    el.className = "px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors";
+                }
+            });
+            
+            applyFilter();
+        }
+
+        function filterScriptContent() {
+            applyFilter();
+        }
+
+        function applyFilter() {
+            const query = document.getElementById('script-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.beat-card');
+
+            cards.forEach(card => {
+                let cardHasMatch = false;
+                const textNodes = card.querySelectorAll('.filter-target');
+
+                textNodes.forEach(node => {
+                    const nodeText = node.innerText.toLowerCase();
+                    const matchesSearch = query === '' || nodeText.includes(query);
+                    
+                    let matchesType = true;
+                    if (currentFilter !== 'all') {
+                        matchesType = node.classList.contains(`type-${currentFilter}`);
+                    }
+
+                    if (matchesSearch && matchesType) {
+                        node.style.display = 'block';
+                        cardHasMatch = true;
+                    } else {
+                        node.style.display = 'none';
+                    }
+                });
+
+                // If search query exists, hide entire card if no parts match
+                if (query !== '') {
+                    card.style.display = cardHasMatch ? 'block' : 'none';
+                } else {
+                    // If no search, show card, but respect type filter for contents
+                    card.style.display = 'block';
+                    
+                    // Special case: if filtering by type and the card has NONE of that type, maybe hide it? 
+                    // No, let's leave the empty card shell to maintain structure and timing context.
+                }
+            });
+        }
+
+        // TELEPROMPTER STATE
+        let prompterIsPlaying = false;
+        let prompterInterval = null;
+        let prompterScrollSpeed = 2;
+        let prompterActiveScriptId = null;
+        
+        // RECORDER STATE
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        function setupPrompterView() {
+            // Load current active script into prompter by default
+            const select = document.getElementById('prompter-script-select');
+            if (select) {
+                select.value = activeScriptId;
+            }
+            loadPrompterScript();
+        }
+
+        function loadPrompterScript() {
+            const select = document.getElementById('prompter-script-select');
+            if (!select) return;
+            
+            prompterActiveScriptId = select.value;
+            const script = scriptData[prompterActiveScriptId];
+            const contentDiv = document.getElementById('prompter-content');
+            
+            // Stop if playing
+            if (prompterIsPlaying) togglePrompter();
+            
+            // Reset position
+            contentDiv.style.transform = `translateY(0px)`;
+            
+            let html = '';
+            script.beats.forEach((beat, i) => {
+                html += `
+                <div class="prompter-beat mb-12 transition-all duration-300 p-6 rounded-xl border border-transparent" data-start="${beat.startSec}" data-end="${beat.endSec}">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="px-3 py-1 bg-slate-800 text-corp-400 font-mono text-sm rounded-md font-bold">${beat.time}</span>
+                        <span class="text-slate-400 font-bold uppercase tracking-widest text-xs">${beat.title.replace(/\[⏱️.*?\]/, '')}</span>
+                    </div>
+                `;
+                
+                if (beat.deliveryNote) {
+                    html += `<p class="text-yellow-400 italic mb-4 font-medium text-lg">Note: ${beat.deliveryNote}</p>`;
+                }
+                
+                if (beat.spoken) {
+                    html += `<p class="text-4xl md:text-5xl font-mono text-white leading-[1.6] font-medium tracking-tight whitespace-pre-wrap">${beat.spoken}</p>`;
+                } else if (beat.onScreen) {
+                    html += `<div class="p-4 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 italic text-xl">Action/On-Screen: ${beat.onScreen}</div>`;
+                }
+                
+                if (beat.shot) {
+                     html += `<p class="text-blue-400 text-lg mt-6 bg-blue-900/20 inline-block px-4 py-2 rounded-lg border border-blue-800/50">🎥 [SHOT: ${beat.shot}]</p>`;
+                }
+                
+                html += `</div>`;
+            });
+            
+            contentDiv.innerHTML = html;
+            document.getElementById('prompter-timer').innerText = "00:00";
+        }
+
+        function togglePrompter() {
+            const btn = document.getElementById('prompter-play-btn');
+            const content = document.getElementById('prompter-content');
+            const timer = document.getElementById('prompter-timer');
+            
+            if (prompterIsPlaying) {
+                // STOP
+                clearInterval(prompterInterval);
+                prompterIsPlaying = false;
+                btn.innerHTML = '▶ Start';
+                btn.classList.replace('bg-red-500', 'bg-corp-600');
+                btn.classList.replace('hover:bg-red-600', 'hover:bg-corp-500');
+            } else {
+                // START
+                prompterIsPlaying = true;
+                btn.innerHTML = '⏸ Pause';
+                btn.classList.replace('bg-corp-600', 'bg-red-500');
+                btn.classList.replace('hover:bg-corp-500', 'hover:bg-red-600');
+                
+                let currentY = parseFloat(content.style.transform.replace('translateY(', '').replace('px)', '')) || 0;
+                let startTime = Date.now();
+                let elapsedMsAtStart = 0; // In a full version, calculate this based on Y position
+
+                prompterInterval = setInterval(() => {
+                    // Scroll logic
+                    currentY -= prompterScrollSpeed;
+                    content.style.transform = `translateY(${currentY}px)`;
+                    
+                    // Basic Timer logic (simulated elapsed time based on playback, not exact scroll map)
+                    let elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+                    let mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+                    let secs = String(elapsedSec % 60).padStart(2, '0');
+                    timer.innerText = `${mins}:${secs}`;
+
+                    // Auto-highlight logic (very basic distance-based estimation)
+                    const beats = document.querySelectorAll('.prompter-beat');
+                    const containerTop = document.getElementById('prompter-scroll-container').getBoundingClientRect().top;
+                    const eyeLine = containerTop + (window.innerHeight * 0.3); // roughly 30% down
+
+                    beats.forEach(beat => {
+                        const rect = beat.getBoundingClientRect();
+                        // If beat crosses the eyeline
+                        if (rect.top < eyeLine && rect.bottom > eyeLine) {
+                            beat.classList.add('active-teleprompter-beat');
+                            beat.style.opacity = '1';
+                        } else {
+                            beat.classList.remove('active-teleprompter-beat');
+                            if (rect.bottom < eyeLine - 100) {
+                                beat.style.opacity = '0.3'; // fade out passed text
+                            } else {
+                                beat.style.opacity = '1';
+                            }
+                        }
+                    });
+
+                }, 50); // 20fps
+            }
+        }
+
+        function changeSpeed(delta) {
+            prompterScrollSpeed = Math.max(0.5, Math.min(10, prompterScrollSpeed + delta * 0.5));
+            document.getElementById('speed-display').innerText = prompterScrollSpeed.toFixed(1) + 'x';
+        }
+
+        async function toggleRecording() {
+            const btn = document.getElementById('practice-record-btn');
+            const status = document.getElementById('record-status');
+            const audioPlayer = document.getElementById('audio-playback');
+
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = e => {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audioPlayer.src = audioUrl;
+                        audioPlayer.classList.remove('hidden');
+                        
+                        stream.getTracks().forEach(track => track.stop()); // Free mic
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    btn.innerHTML = '⏹ Stop Rec';
+                    btn.classList.add('border-red-500', 'text-red-500');
+                    status.classList.remove('hidden');
+                    audioPlayer.classList.add('hidden'); 
+                } catch (err) {
+                    alert("Microphone access denied. Please allow microphone permissions to practice.");
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.innerHTML = '🎙️ Record Take';
+                btn.classList.remove('border-red-500', 'text-red-500');
+                status.classList.add('hidden');
+            }
+        }
+
+        function renderShotList() {
+            const container = document.getElementById('shotlist-container');
+            if (!container) return;
+            
+            let html = '';
+            
+            Object.values(scriptData).forEach(script => {
+                const shots = script.beats.filter(b => b.shot);
+                if (shots.length === 0) return;
+                
+                html += `
+                <div class="mb-6 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <div class="flex items-center justify-between bg-slate-50 border-b border-slate-200 px-5 py-4">
+                        <div class="flex items-center gap-4">
+                            <h3 class="text-lg font-bold text-slate-800">${script.title}</h3>
+                            <button onclick="exportScriptMarkdown('${script.id}')" class="text-[10px] uppercase font-bold text-corp-600 hover:text-corp-800 bg-corp-100 hover:bg-corp-200 px-3 py-1.5 rounded transition-colors shadow-sm">Export .MD</button>
+                        </div>
+                        <span class="text-xs font-semibold bg-white border border-slate-200 text-slate-500 px-3 py-1.5 rounded-md shadow-sm">${shots.length} Shots</span>
+                    </div>
+                    <div class="divide-y divide-slate-100">
+                `;
+                
+                shots.forEach((beat, idx) => {
+                    const uniqueId = `shot-${script.id}-${idx}`;
+                    const cleanTitle = beat.title.replace(/\s+\[⏱️.*?\]/, '');
+                    html += `
+                    <label for="${uniqueId}" class="flex items-start gap-4 p-5 hover:bg-slate-50 transition-all cursor-pointer group">
+                        <input type="checkbox" id="${uniqueId}" class="mt-1 w-5 h-5 text-corp-600 rounded border-slate-300 focus:ring-corp-500 cursor-pointer">
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="text-xs font-bold text-slate-500 bg-white px-2 py-1 rounded border border-slate-200">${beat.time}</span>
+                                <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">${cleanTitle}</span>
+                            </div>
+                            <p class="text-sm text-slate-900 font-medium leading-relaxed group-hover:text-black transition-colors">🎥 [SHOT: ${beat.shot}]</p>
+                            ${beat.deliveryNote ? `<p class="text-xs text-slate-500 mt-2 italic">🗣️ Note: ${beat.deliveryNote}</p>` : ''}
+                        </div>
+                    </label>
+                    `;
+                });
+                html += `</div></div>`;
+            });
+            
+            container.innerHTML = html || `<div class="text-center py-12 text-slate-400">No [SHOT] cues found.</div>`;
+        }
+
+        function downloadMarkdown(filename, content) {
+            const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        function exportScriptMarkdown(scriptId) {
+            const script = scriptData[scriptId];
+            if (!script) return;
+            let md = `# ${script.title}\n\n`;
+            script.beats.forEach(b => {
+                md += `**${b.time} ${b.title.replace(/\s+\[⏱️.*?\]/, '')}**\n`;
+                if (b.spoken) md += `*Spoken:* ${b.spoken}\n`;
+                if (b.onScreen) md += `*On-screen text:* ${b.onScreen}\n`;
+                if (b.shot) md += `*SHOT:* [${b.shot}]\n`;
+                if (b.deliveryNote) md += `*Delivery Note:* ${b.deliveryNote}\n`;
+                md += `\n`;
+            });
+            downloadMarkdown(`${script.shortTitle.replace(/\s+/g, '_')}.md`, md);
+        }
+
+        function exportAllScripts() {
+            let md = `# Trisparc Reel Scripts Studio - Full Collection\n\n`;
+            Object.values(scriptData).forEach(script => {
+                md += `## ${script.title}\n\n`;
+                script.beats.forEach(b => {
+                    md += `**${b.time} ${b.title.replace(/\s+\[⏱️.*?\]/, '')}**\n`;
+                    if (b.spoken) md += `*Spoken:* ${b.spoken}\n`;
+                    if (b.onScreen) md += `*On-screen text:* ${b.onScreen}\n`;
+                    if (b.shot) md += `*SHOT:* [${b.shot}]\n`;
+                    if (b.deliveryNote) md += `*Delivery Note:* ${b.deliveryNote}\n`;
+                    md += `\n`;
+                });
+                md += `---\n\n`;
+            });
+            downloadMarkdown(`All_Scripts.md`, md);
+        }
+
+        function openImportModal() {
+            document.getElementById('import-modal').classList.remove('hidden');
+            document.getElementById('import-title').value = '';
+            document.getElementById('import-short').value = 'Script ' + nextScriptIdNum;
+            document.getElementById('import-text').value = '';
+        }
+
+        function closeImportModal() {
+            document.getElementById('import-modal').classList.add('hidden');
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('import-text').value = e.target.result;
+                // Auto-suggest title based on filename
+                if (!document.getElementById('import-title').value) {
+                    let title = file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+                    document.getElementById('import-title').value = title;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function processImport() {
+            const title = document.getElementById('import-title').value.trim();
+            const shortTitle = document.getElementById('import-short').value.trim() || 'New Script';
+            const rawText = document.getElementById('import-text').value.trim();
+
+            if (!title || !rawText) {
+                alert("Please provide a Script Title and Script Content.");
+                return;
+            }
+
+            const parsedBeats = parseRawScriptText(rawText);
+            if (parsedBeats.length === 0) {
+                alert("Could not parse timing beats. Ensure you use the [0-3s] tag format.");
+                return;
+            }
+
+            const newId = 'script' + nextScriptIdNum++;
+            // Cycle through themes
+            const newTheme = themeList[(nextScriptIdNum-1) % themeList.length];
+
+            scriptData[newId] = {
+                id: newId,
+                shortTitle: shortTitle,
+                title: title,
+                theme: newTheme,
+                desc: 'User imported script.',
+                beats: parsedBeats
+            };
+
+            closeImportModal();
+            buildNavigation();
+            loadScriptHub(newId);
+        }
+
+        function parseRawScriptText(text) {
+            const beats = [];
+            // Split block based on lookahead for [number-numbers]
+            const blocks = text.split(/(?=\[\s*\d+\s*-\s*\d+\s*s\s*\])/gi);
+
+            blocks.forEach(block => {
+                const trimmed = block.trim();
+                if (!trimmed) return;
+
+                const timeMatch = trimmed.match(/\[\s*(\d+)\s*-\s*(\d+)\s*s\s*\]\s*([^\n]*)/i);
+                if (!timeMatch) return;
+
+                const startSec = parseInt(timeMatch[1]);
+                const endSec = parseInt(timeMatch[2]);
+                let beatTitle = timeMatch[3].trim() || "BEAT";
+
+                let spoken = null;
+                const spokenMatch = trimmed.match(/Spoken\s*:\s*(?:["']?([^"'\n\r]+(?:\n[^"'\n\r]+)*)["']?|([^\n\r]+(?:(?!\n(?:On-screen|\[SHOT|\[\d+-)).)*))/is);
+                if (spokenMatch) spoken = (spokenMatch[1] || spokenMatch[2]).trim().replace(/^["']|["']$/g, '');
+
+                let onScreen = null;
+                const onScreenMatch = trimmed.match(/On-screen\s*(?:text)?\s*(?:\+\s*spoken)?\s*:\s*(?:["']?([^"'\n\r]+(?:\n[^"'\n\r]+)*)["']?|([^\n\r]+(?:(?!\n(?:Spoken|\[SHOT|\[\d+-)).)*))/is);
+                if (onScreenMatch) onScreen = (onScreenMatch[1] || onScreenMatch[2]).trim().replace(/^["']|["']$/g, '');
+
+                let shot = null;
+                const shotMatch = trimmed.match(/\[SHOT:\s*([^\]]+)\]/i);
+                if (shotMatch) shot = shotMatch[1].trim();
+
+                let deliveryNote = null;
+                const noteMatch = trimmed.match(/Direct to camera[^\n:]*:\s*["']?([^"'\n]+)/i);
+                if (noteMatch) {
+                    deliveryNote = "Direct to camera";
+                    if (!spoken) spoken = noteMatch[1].trim();
+                }
+
+                // WPM Calculator
+                let wpm = 0;
+                if (spoken) {
+                    const duration = endSec - startSec;
+                    if (duration > 0) {
+                        const words = spoken.trim().split(/\s+/).length;
+                        wpm = Math.round((words / duration) * 60);
+                    }
+                }
+
+                beats.push({
+                    time: `[${startSec}-${endSec}s]`,
+                    title: beatTitle,
+                    startSec: startSec,
+                    endSec: endSec,
+                    spoken: spoken,
+                    onScreen: onScreen,
+                    shot: shot,
+                    deliveryNote: deliveryNote,
+                    wpm: wpm
+                });
+            });
+
+            return beats;
+        }
+
+        // INITIALIZATION
+        window.onload = () => {
+            buildNavigation();
+            loadScriptHub('script1');
+        };
+    </script>
+</body>
+</html>
