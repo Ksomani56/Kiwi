@@ -1,10 +1,5 @@
-// ─── Supabase credentials ─────────────────────────────────────────────────────
-// Project URL: found in your Supabase dashboard URL bar
-//   e.g. https://ztsoegzstbiyqpgbnztn.supabase.co
-// Key: use the Publishable key (Settings → API Keys → Publishable key)
-const SUPABASE_URL = 'https://ztsoegzstbiyqpgbnztn.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_AC7hG1ET9EkONElCbFux3A_Zb4iD5v7';
+// Credentials are loaded from js/config.js (gitignored)
+// Copy js/config.example.js → js/config.js and fill in your values
 
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+const db = createClient(KIWI_SUPABASE_URL, KIWI_SUPABASE_KEY);
